@@ -1,0 +1,77 @@
+//verificar ip
+ip a
+
+//edição arquivo pg_hba.conf
+#administrative
+local		all	postgres				trust
+local		all	bucardo				trust
+
+#ipv4
+host		all	all	127.0.0.1/32		trust
+host		all	all		IP_HOST/		trust
+
+#replication
+host		bucardo	bucardo	IP_HOST/	trust
+
+sudo systemctl restart postgresql
+
+//configurar bucardo
+sudo bucardo install
+
+//Testar conexao direta no postgres da maquinas 
+psql -h IP_MAQUINA_2 -U usuario -d nome_do_banco
+
+
+--Configuração Maquina 1
+
+sudo -i
+
+\\ realizar configuração da sincronização
+	//add databases
+	bucardo add database NOME_CONEXAO(Ex:conec1) dbname=nomedb(nome do database criado)
+	bucardo add database NOME_CONEXAO(Ex:conec2) dbname=nomedb(nome do database criado) host=IP_MAQUINA2
+		
+	//add tabelas
+	bucardo add NOME_TABELA db=NOME_CONEXAO(EX:conec1)
+	
+	//add sync
+	bucardo add sync NOME_SYNC(Ex:OneToTwo) relgroup=NOME_GRUPO(Ex=OneTwo) db=NOME_CONEXAO_SOURCE(Ex:conec1),NOME_CONEXAO_TARGET(Ex:conec2)
+
+	//add herd
+	bucardo add all tables --herd=NOME_GRUPO(Ex=OneTwo) db=NOME_CONEXAO(Ex:conec1)
+	
+//Listar Configurações
+bucardo list database
+bucardo list sync
+
+//start bucardo
+bucardo start
+bucardo status
+
+////////////////////////////////////////////////////////
+--Configuração Maquina 2
+
+sudo -i
+
+\\ realizar configuração da sincronização
+	//add databases
+	bucardo add database NOME_CONEXAO(Ex:conec1) dbname=nomedb(nome do database criado) host=IP_MAQUINA1
+	bucardo add database NOME_CONEXAO(Ex:conec2) dbname=nomedb(nome do database criado) 
+
+	//add tabelas
+	bucardo add NOME_TABELA db=NOME_CONEXAO(EX:conec2)
+	
+	//add sync
+	bucardo add sync NOME_SYNC(Ex:TwoToOne) relgroup=NOME_GRUPO(Ex=TwoOne) db=NOME_CONEXAO_SOURCE(Ex:conec2),NOME_CONEXAO_TARGET(Ex:conec1)
+	
+	//add herd
+	bucardo add all tables --herd=NOME_GRUPO(Ex=TwoOne) db=NOME_CONEXAO(Ex:conec2)
+
+//Listar Configurações
+bucardo list database
+bucardo list sync
+
+//start bucardo
+bucardo start
+bucardo status
+
